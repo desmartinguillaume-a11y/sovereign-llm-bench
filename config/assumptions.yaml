@@ -1,0 +1,28 @@
+# Hypothèses on-prem — à ajuster selon contexte
+# Source : grilles tarifaires constructeurs 2024,
+# retours terrain grands comptes FR
+
+onprem_gpu_server:
+  description: "Dell PowerEdge / HPE ProLiant 4x A100 80GB"
+  purchase_price_eur: 280000
+  purchase_year: 2024
+  amortization_years: 4
+  maintenance_rate: 0.15        # % du prix achat / an
+  gpu_count: 4
+  gpu_model: "NVIDIA A100 80GB"
+  gpu_tdp_watts: 2500           # 4x ~625W
+  pue_datacenter: 1.4
+  electricity_eur_per_kwh: 0.10
+  openshift_license_eur_per_year: 50000
+  ops_fte: 0.3
+  ops_fte_cost_eur_per_year: 100000
+
+throughput:
+  # Llama 3 70B sur 4x A100, vLLM, batch raisonnable
+  # Source : llmfit community benchmarks A100
+  tokens_per_second_per_gpu: 180
+  input_output_ratio: 0.75      # 75% input, 25% output
+
+fx:
+  usd_to_eur: 0.92
+  retrieved_date: "2026-05-08"

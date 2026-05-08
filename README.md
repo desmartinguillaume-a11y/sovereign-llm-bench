@@ -48,6 +48,7 @@ Le calcul TCO tourne **sans aucun appel API** — le pricing est versionné dans
 | [Bleu](https://bleu.cloud) (Microsoft × Orange) | API pay-per-token | SecNumCloud en cours | [Azure OpenAI pricing](https://azure.microsoft.com/en-us/pricing/details/ai-foundry-models/aoai/) ⚠ proxy |
 | [Scaleway](https://www.scaleway.com/en/pricing/model-as-a-service/) Generative APIs | API pay-per-token | HDS · ISO 27001 | [scaleway.com/pricing](https://www.scaleway.com/en/pricing/model-as-a-service/) ✓ officiel |
 | [OVH Self-hosted](https://www.ovhcloud.com/en/public-cloud/prices/) GPU cloud | GPU/heure | HDS · SecNumCloud | [ovhcloud.com/prices](https://www.ovhcloud.com/en/public-cloud/prices/) ✓ officiel |
+| On-prem OpenShift GPU | Capex amorti | Votre datacenter | `config/assumptions.yaml` ⚠ hypothèses documentées 2024 |
 
 ---
 
@@ -145,6 +146,27 @@ sovereign-llm-bench/
   Le débit réel dépend du hardware effectif, de la config vLLM et du mix input/output.
 - **Volume discounts** : non appliqués (prix list publics uniquement).
 - **S3NS / Bleu** : les prix proxy sont des minima — le surcoût souverain contractuel peut être significatif.
+
+---
+
+## Hypothèses on-prem
+
+Le modèle on-prem calcule un **coût annuel fixe** indépendant du volume de tokens :
+
+```
+coût_annuel = (prix_achat / durée_amortissement)   # capex
+            + (prix_achat × taux_maintenance)       # maintenance constructeur
+            + (tdp_watts / 1000 × PUE × 8760h × prix_kWh)  # électricité
+            + licence_openshift_annuelle
+            + (ETP_ops × coût_ETP_annuel)
+```
+
+Le nombre de serveurs est calculé par scénario selon le TPS de sortie requis :
+`serveurs = max(1, ceil(tps_requis / (tps_par_gpu × gpus_par_serveur)))`
+
+Le coût mensuel on-prem est `coût_annuel / 12` (serveurs en 24/7, pas seulement les jours ouvrés).
+
+Toutes les hypothèses sont dans [`config/assumptions.yaml`](config/assumptions.yaml) — serveur de référence : Dell PowerEdge / HPE ProLiant 4× A100 80GB, amorti sur 4 ans, avec licence OpenShift et 0,3 ETP ops.
 
 ---
 

@@ -13,12 +13,13 @@ from benchmark.tco_calculator import BreakevenResult, TCOCalculator, TCOResult
 
 RESULTS_DIR = Path(__file__).parent.parent / "results"
 
-PROVIDER_ORDER = ["s3ns", "bleu", "scaleway", "ovh_selfhosted"]
+PROVIDER_ORDER = ["s3ns", "bleu", "scaleway", "ovh_selfhosted", "onprem_openshift"]
 PROVIDER_LABELS = {
     "s3ns": "S3NS (Thales×GCP)",
     "bleu": "Bleu (MS×Orange)",
     "scaleway": "Scaleway FR",
     "ovh_selfhosted": "OVH Self-hosted",
+    "onprem_openshift": "On-prem OpenShift",
 }
 
 
@@ -101,7 +102,7 @@ def _print_table(results: list[TCOResult]) -> None:
     separator = "─" * (22 + col_w * len(PROVIDER_ORDER))
 
     print("\n" + "═" * len(separator))
-    print("  SOVEREIGN LLM BENCH — TCO COMPARATIF (€/mois, jours ouvrés)")
+    print("  SOVEREIGN LLM BENCH — TCO COMPARATIF (€/mois, API=22j ouvrés, on-prem=mensuel fixe)")
     print("═" * len(separator))
     print(f"  {'Scénario':<20}" + "".join(h_provider))
     print(separator)
@@ -135,20 +136,22 @@ def _print_table(results: list[TCOResult]) -> None:
 
 
 def _print_breakeven(breakevens: list[BreakevenResult]) -> None:
-    print("═" * 80)
-    print("  SEUILS DE RENTABILITÉ — OVH self-hosted vs cloud souverain API")
-    print("═" * 80)
-    print(f"  {'Scénario':<8} {'vs provider':<20} {'Self-hosted/mois':>18} {'API/mois':>14} {'Breakeven':>12}  Verdict")
-    print("─" * 80)
+    print("═" * 90)
+    print("  SEUILS DE RENTABILITÉ — infra gérée vs cloud souverain API")
+    print("═" * 90)
+    print(f"  {'Scénario':<8} {'Référence':<20} {'vs provider':<20} {'Géré/mois':>14} {'API/mois':>12} {'Breakeven':>12}  Verdict")
+    print("─" * 90)
 
     for be in breakevens:
         be_str = f"{be.breakeven_months:.0f} mois" if be.breakeven_months not in (float("inf"), 0) else ("jamais" if be.breakeven_months == float("inf") else "immédiat")
-        verdict = "✓ self-hosted" if be.cheaper_at_scale == "ovh_selfhosted" else f"✓ {be.api_provider}"
+        ref_label = PROVIDER_LABELS.get(be.reference_provider, be.reference_provider)
+        verdict = f"✓ {ref_label}" if be.cheaper_at_scale == be.reference_provider else f"✓ {be.api_provider}"
         print(
             f"  {be.scenario_id:<8} "
+            f"{ref_label:<20} "
             f"{PROVIDER_LABELS.get(be.api_provider, be.api_provider):<20} "
-            f"€{be.selfhosted_cost_month_eur:>14,.0f}   "
-            f"€{be.api_cost_month_eur:>10,.0f}   "
+            f"€{be.selfhosted_cost_month_eur:>10,.0f}   "
+            f"€{be.api_cost_month_eur:>8,.0f}   "
             f"{be_str:>10}  {verdict}"
         )
 
