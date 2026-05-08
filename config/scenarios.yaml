@@ -1,111 +1,98 @@
 # Load scenarios for sovereign-llm-bench
-# Each scenario targets a specific enterprise use case.
-# Token splits (input/output ratio) are calibrated from real EU enterprise deployments.
+# 4 scénarios grands comptes EU, modèles assignés aux 4 cloud souverains FR.
 
 scenarios:
 
   S1:
     name: "RAG léger"
-    description: "Q&A sur documentation interne — 200 utilisateurs, 5 échanges/jour"
+    description: "Q&A documentation interne — 200 utilisateurs, 5 échanges/jour"
     users: 200
     exchanges_per_user_per_day: 5
-    # Input = retrieved chunks (avg 800 tokens) + question (avg 100 tokens) + system prompt (300 tokens)
-    # Output = answer (avg 400 tokens)
-    avg_input_tokens_per_exchange: 1200
+    avg_input_tokens_per_exchange: 1200   # chunks RAG (800) + question (100) + system prompt (300)
     avg_output_tokens_per_exchange: 400
-    # Derived totals (users × exchanges × tokens)
-    tokens_input_per_day: 1_200_000    # ~1.2M
-    tokens_output_per_day: 800_000     # ~0.8M
-    tokens_total_per_day: 2_000_000    # ~2M
-    # Model assignment per provider (quality use case → premium model)
+    tokens_input_per_day: 1_200_000
+    tokens_output_per_day: 800_000
+    tokens_total_per_day: 2_000_000
     model_selection:
-      mistral: "mistral-large-latest"
-      anthropic: "claude-sonnet-4-6"
-      azure_openai: "gpt-4o"
+      s3ns: "gemini-2.5-pro"
+      bleu: "gpt-4.1"
+      scaleway: "mistral-large-3"
       ovh_selfhosted: "llama3-70b-q4"
+    # Temps serveur minimum OVH/jour : RAG sporadique, on-demand acceptable
+    ovh_min_hours_per_day: 2
     sla:
       latency_p95_ms: 3000
       availability_pct: 99.5
 
   S2:
     name: "Chatbot support client"
-    description: "Support client multilingue — 1000 utilisateurs, 10 échanges/jour, historique de contexte moyen"
+    description: "Support multilingue — 1000 utilisateurs, 10 échanges/jour, historique contexte"
     users: 1000
     exchanges_per_user_per_day: 10
-    # Input = conversation history (avg 2000 tokens) + new message (200 tokens) + system prompt (500 tokens)
-    # Output = response (avg 300 tokens)
-    avg_input_tokens_per_exchange: 2700
+    avg_input_tokens_per_exchange: 2700   # historique (2000) + message (200) + system (500)
     avg_output_tokens_per_exchange: 300
-    # Derived totals
-    tokens_input_per_day: 27_000_000   # ~27M
-    tokens_output_per_day: 3_000_000   # ~3M
-    tokens_total_per_day: 30_000_000   # ~30M (brief says 50M — adjusted for realistic context window)
+    tokens_input_per_day: 27_000_000
+    tokens_output_per_day: 3_000_000
+    tokens_total_per_day: 30_000_000
     model_selection:
-      mistral: "mistral-large-latest"
-      anthropic: "claude-sonnet-4-6"
-      azure_openai: "gpt-4o"
+      s3ns: "gemini-2.5-pro"
+      bleu: "gpt-4.1"
+      scaleway: "mistral-large-3"
       ovh_selfhosted: "llama3-70b-q4"
+    # Chatbot temps réel : serveur actif pendant heures bureau
+    ovh_min_hours_per_day: 8
     sla:
       latency_p95_ms: 5000
       availability_pct: 99.9
 
   S3:
     name: "Call center — résumé post-appel"
-    description: "Résumé automatique post-appel — 2000 agents, ~8 appels/jour chacun"
+    description: "Résumé automatique post-appel — 2000 agents, ~8 appels/jour"
     users: 2000
     calls_per_agent_per_day: 8
-    # Input = call transcript (avg 10000 tokens) + system prompt (500 tokens)
-    # Output = structured summary (avg 500 tokens)
-    avg_input_tokens_per_call: 10_500
+    avg_input_tokens_per_call: 10_500    # transcript (10000) + system prompt (500)
     avg_output_tokens_per_call: 500
-    # Derived totals (2000 agents × 8 calls)
-    tokens_input_per_day: 168_000_000  # ~168M
-    tokens_output_per_day: 8_000_000   # ~8M
-    tokens_total_per_day: 176_000_000  # ~176M ≈ 200M
-    # Volume use case → cost-optimised model
+    tokens_input_per_day: 168_000_000
+    tokens_output_per_day: 8_000_000
+    tokens_total_per_day: 176_000_000
     model_selection:
-      mistral: "mistral-small-latest"
-      anthropic: "claude-haiku-4-5"
-      azure_openai: "gpt-4o-mini"
+      s3ns: "gemini-2.5-flash-lite"
+      bleu: "gpt-4o-mini"
+      scaleway: "llama-3.1-70b-instruct"
       ovh_selfhosted: "llama3-70b-q4"
+    # Résumés post-appel asynchrones : on paie seulement le temps de calcul effectif
+    ovh_min_hours_per_day: 0
     sla:
-      latency_p95_ms: 30000   # async post-call, soft latency
+      latency_p95_ms: 30000
       availability_pct: 99.5
 
   S4:
     name: "Call center temps réel (extrême)"
     description: >
-      Analyse sentiment live toutes les 30s + suggestion réponse agent en temps réel
-      + résumé post-appel — 2000 agents en simultané
+      Analyse sentiment live toutes les 30s + suggestion réponse + résumé post-appel
+      — 2000 agents simultanés
     users: 2000
-    # 3 inference types running in parallel per agent:
-    #   A) Sentiment analysis every 30s during ~6min call → 12 inferences/call
-    #   B) Response suggestion every 30s → 12 inferences/call
-    #   C) Post-call summary → 1 inference/call
     calls_per_agent_per_day: 8
-    # Inference A: sentiment (input=last 30s transcript ~300 tokens, output=50 tokens)
-    # Inference B: suggestion (input=context 1500 tokens, output=200 tokens)
-    # Inference C: summary (input=full transcript 10000 tokens, output=500 tokens)
-    # Per agent per call:
-    #   A: 12 × (300+50) = 4200 tokens
-    #   B: 12 × (1500+200) = 20400 tokens
-    #   C: 1 × (10000+500) = 10500 tokens
-    #   Total per call: 35100 tokens (split below)
+    # Inferences par appel :
+    #   A) Sentiment (12×/appel) : 300 input + 50 output = 350 tokens
+    #   B) Suggestion (12×/appel) : 1500 input + 200 output = 1700 tokens
+    #   C) Résumé (1×/appel) : 10000 input + 500 output = 10500 tokens
     avg_input_tokens_per_call: 31_600
     avg_output_tokens_per_call: 3_500
-    # Derived totals (2000 agents × 8 calls)
-    tokens_input_per_day: 505_600_000   # ~506M
-    tokens_output_per_day: 56_000_000   # ~56M
-    tokens_total_per_day: 561_600_000   # ~562M (brief says 1B+ — scales beyond 2000 agents)
+    tokens_input_per_day: 505_600_000
+    tokens_output_per_day: 56_000_000
+    tokens_total_per_day: 561_600_000
     model_selection:
-      mistral: "mistral-small-latest"
-      anthropic: "claude-haiku-4-5"
-      azure_openai: "gpt-4o-mini"
+      s3ns: "gemini-2.5-flash-lite"
+      bleu: "gpt-4o-mini"
+      scaleway: "llama-3.1-70b-instruct"
       ovh_selfhosted: "llama3-70b-q4"
+    # Temps réel : 2000 agents sur shift de 8h + 2h astreinte/monitoring
+    ovh_min_hours_per_day: 10
     sla:
-      latency_p95_ms: 800    # real-time constraint: <1s for sentiment/suggestion
+      latency_p95_ms: 800
       availability_pct: 99.99
     notes: >
-      Real-time SLA (<1s) is the critical constraint. OVH self-hosted
-      must be sized for peak concurrency (2000 simultaneous streams),
-      not average throughput. GPU count must be scaled accordingly.
+      SLA temps réel (<1s) est la contrainte critique.
+      OVH self-hosted doit être dimensionné pour 2000 streams simultanés.
+      Le calcul TCO OVH suppose 1 GPU — à multiplier pour couvrir la concurrence réelle.

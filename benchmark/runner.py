@@ -13,11 +13,11 @@ from benchmark.tco_calculator import BreakevenResult, TCOCalculator, TCOResult
 
 RESULTS_DIR = Path(__file__).parent.parent / "results"
 
-PROVIDER_ORDER = ["mistral", "anthropic", "azure_openai", "ovh_selfhosted"]
+PROVIDER_ORDER = ["s3ns", "bleu", "scaleway", "ovh_selfhosted"]
 PROVIDER_LABELS = {
-    "mistral": "Mistral API",
-    "anthropic": "Anthropic Claude",
-    "azure_openai": "Azure OpenAI EU",
+    "s3ns": "S3NS (Thales×GCP)",
+    "bleu": "Bleu (MS×Orange)",
+    "scaleway": "Scaleway FR",
     "ovh_selfhosted": "OVH Self-hosted",
 }
 
@@ -49,7 +49,7 @@ def _write_csv(results: list[TCOResult], breakevens: list[BreakevenResult]) -> N
         "scenario_id", "scenario_name", "provider", "model",
         "tokens_input_day", "tokens_output_day",
         "cost_day_eur", "cost_month_eur", "cost_year_eur",
-        "cost_per_m_tokens_eur", "gpus_required", "notes",
+        "cost_per_m_tokens_eur", "gpus_required", "pricing_status", "notes",
     ]
     with open(tco_path, "w", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
@@ -136,7 +136,7 @@ def _print_table(results: list[TCOResult]) -> None:
 
 def _print_breakeven(breakevens: list[BreakevenResult]) -> None:
     print("═" * 80)
-    print("  SEUILS DE RENTABILITÉ — OVH self-hosted vs API")
+    print("  SEUILS DE RENTABILITÉ — OVH self-hosted vs cloud souverain API")
     print("═" * 80)
     print(f"  {'Scénario':<8} {'vs provider':<20} {'Self-hosted/mois':>18} {'API/mois':>14} {'Breakeven':>12}  Verdict")
     print("─" * 80)
