@@ -1,0 +1,101 @@
+# Pricing configuration for sovereign-llm-bench
+# All API prices in USD per 1M tokens unless noted.
+# OVH GPU prices in EUR/hour (OVH bills in EUR).
+# Prices retrieved: 2026-05-08. Verify before using in production analysis.
+
+metadata:
+  retrieved_date: "2026-05-08"
+  usd_to_eur: 0.92  # Update to current spot rate before publishing results
+  note: >
+    Prices are public list prices with no volume discounts applied.
+    API providers bill in USD; OVH bills in EUR.
+    Self-hosted cost/token is derived from GPU price and calibrated throughput.
+
+providers:
+
+  mistral:
+    name: "Mistral API (EU)"
+    billing: "pay-per-token"
+    data_residency: "EU (Paris)"
+    source_url: "https://mistral.ai/technology/#pricing"
+    models:
+      mistral-large-latest:
+        display_name: "Mistral Large 2"
+        currency: "USD"
+        input_per_1m_tokens: 2.00
+        output_per_1m_tokens: 6.00
+        context_window: 131072
+        notes: "Used for quality scenarios (S1, S2)"
+      mistral-small-latest:
+        display_name: "Mistral Small 3.1"
+        currency: "USD"
+        input_per_1m_tokens: 0.10
+        output_per_1m_tokens: 0.30
+        context_window: 32768
+        notes: "Used for volume scenarios (S3, S4)"
+
+  anthropic:
+    name: "Anthropic Claude API"
+    billing: "pay-per-token"
+    data_residency: "EU available via AWS eu-west regions"
+    source_url: "https://www.anthropic.com/pricing"
+    models:
+      claude-haiku-3-5:
+        display_name: "Claude Haiku 3.5"
+        currency: "USD"
+        input_per_1m_tokens: 0.80
+        output_per_1m_tokens: 4.00
+        context_window: 200000
+        notes: "Used for volume scenarios (S3, S4)"
+      claude-sonnet-3-7:
+        display_name: "Claude Sonnet 3.7"
+        currency: "USD"
+        input_per_1m_tokens: 3.00
+        output_per_1m_tokens: 15.00
+        context_window: 200000
+        notes: "Used for quality scenarios (S1, S2)"
+
+  azure_openai:
+    name: "Azure OpenAI (EU)"
+    billing: "pay-per-token"
+    data_residency: "EU (West Europe / Sweden Central)"
+    source_url: "https://azure.microsoft.com/en-us/pricing/details/cognitive-services/openai-service/"
+    models:
+      gpt-4o-mini:
+        display_name: "GPT-4o mini"
+        currency: "USD"
+        input_per_1m_tokens: 0.15
+        output_per_1m_tokens: 0.60
+        context_window: 128000
+        notes: "Used for volume scenarios (S3, S4)"
+      gpt-4o:
+        display_name: "GPT-4o"
+        currency: "USD"
+        input_per_1m_tokens: 2.50
+        output_per_1m_tokens: 10.00
+        context_window: 128000
+        notes: "Used for quality scenarios (S1, S2)"
+
+  ovh_selfhosted:
+    name: "OVH Self-hosted"
+    billing: "gpu-per-hour"
+    data_residency: "EU (Gravelines / Strasbourg / Roubaix)"
+    source_url: "https://www.ovhcloud.com/fr/public-cloud/prices/"
+    hardware:
+      a100-80gb:
+        display_name: "NVIDIA A100 80GB"
+        price_per_hour_eur: 2.90
+        vram_gb: 80
+        # Source: OVH Public Cloud GPU instances, flavor "ai1-1-gpu"
+    models:
+      llama3-70b-q4:
+        display_name: "Llama 3 70B (4-bit GPTQ)"
+        hardware: "a100-80gb"
+        gpus_required: 1
+        # Throughput calibrated from LLMfit community benchmarks:
+        # https://github.com/Mozilla-Ocho/llamafile/discussions + vLLM benchmarks
+        # 4-bit Llama3-70B on A100 80GB with vLLM, batch_size=32: ~900 tok/s
+        tokens_per_second: 900
+        # Overhead: OS, vLLM server, monitoring ~15%
+        effective_tokens_per_second: 765
+        notes: "Served with vLLM. Throughput is aggregate output tok/s under sustained load."

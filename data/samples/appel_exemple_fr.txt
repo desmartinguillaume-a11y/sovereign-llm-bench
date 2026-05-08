@@ -1,0 +1,38 @@
+Agent : Bonjour, vous êtes bien chez MutuelSanté Pro, je suis Thomas. Comment puis-je vous aider ?
+
+Client : Bonjour Thomas. Je vous appelle car j'ai reçu un décompte de remboursement pour une consultation chez un spécialiste le 12 mars, et le montant remboursé me semble bien inférieur à ce que mon contrat prévoit.
+
+Agent : Je comprends votre préoccupation. Pouvez-vous me communiquer votre numéro d'adhérent s'il vous plaît ?
+
+Client : Oui, c'est le 4872-FR-09341.
+
+Agent : Merci. Je vois bien votre dossier. La consultation du 12 mars concerne quel type de spécialiste ?
+
+Client : Un cardiologue, en secteur 2. Mon contrat dit que je suis remboursé à 100 % du tarif conventionnel plus 150 % de dépassements d'honoraires.
+
+Agent : Tout à fait. Je vois que le cardiologue a facturé 120 euros. Le tarif de base Sécurité sociale est de 30 euros pour un spécialiste. Votre mutuelle prend en charge 100 % de ce tarif, soit 30 euros, plus 150 % du dépassement, donc 135 % de 90 euros de dépassement, ce qui fait 121,50 euros au total.
+
+Client : Attendez… donc je devrais recevoir 30 + 121,50 = 151,50 euros ?
+
+Agent : Exactement, moins la part prise en charge par la Sécurité sociale. La CPAM rembourse 70 % de 30 euros, soit 21 euros. Votre mutuelle complète donc à hauteur de 130,50 euros. Au total vous recevez bien 151,50 euros de remboursement combiné.
+
+Client : Mais mon décompte indique seulement 85 euros de la mutuelle.
+
+Agent : Je vais vérifier le détail du décompte. Je vois un code de liquidation 04-B appliqué, ce qui signifie que le médecin n'est pas dans le réseau de soins Carte Blanche. Dans ce cas, le remboursement des dépassements est plafonné à 100 % au lieu de 150 %.
+
+Client : Je n'étais pas au courant de cette restriction réseau.
+
+Agent : C'est tout à fait compréhensible, cette information est parfois peu visible dans les contrats. Je vais faire remonter un recours auprès de notre service de gestion pour vérifier si la règle réseau a été correctement appliquée à votre contrat. Vous recevrez une réponse par courrier dans 5 jours ouvrés.
+
+Client : D'accord, merci pour ces explications.
+
+Agent : Je vous en prie. Y a-t-il autre chose que je puisse faire pour vous aujourd'hui ?
+
+Client : Non, c'est parfait.
+
+Agent : Très bien. Bonne journée monsieur, et merci pour votre fidélité à MutuelSanté Pro.
+
+---
+Durée de l'appel : 6 minutes 14 secondes
+Motif principal : Contestation remboursement / Explication décompte
+Résolution : Recours interne ouvert, référence RC-2024-0341-FR

@@ -1,0 +1,40 @@
+--- Exemple de requête RAG (S1) ---
+
+[SYSTEM PROMPT]
+Tu es un assistant RH interne. Réponds uniquement à partir des extraits de documents fournis.
+Si l'information n'est pas dans les extraits, indique-le clairement.
+
+[CONTEXTE RÉCUPÉRÉ — 3 chunks]
+Chunk 1 (Politique congés 2024, p.4) :
+"Les congés payés annuels sont de 25 jours ouvrés pour un temps plein.
+Les RTT sont attribués selon l'accord de branche applicable à l'entreprise,
+soit 12 jours par an pour une durée hebdomadaire de 37h30."
+
+Chunk 2 (FAQ RH interne, article 8) :
+"La pose de congés doit être effectuée avec un préavis minimum de :
+- 1 semaine pour les congés de 1 à 3 jours
+- 3 semaines pour les congés de 4 jours à 2 semaines
+- 6 semaines pour les congés de plus de 2 semaines
+Les demandes sont soumises à validation du manager direct."
+
+Chunk 3 (Accord télétravail 2023, art. 12) :
+"En cas de congé posé pendant une période de télétravail planifiée,
+les jours de télétravail correspondants sont annulés de plein droit.
+Aucune compensation ni report de jours de télétravail n'est prévu."
+
+[QUESTION UTILISATEUR]
+J'ai planifié 3 semaines de vacances en août. Quel est le délai de prévenance minimum
+et que se passe-t-il avec mes jours de télétravail prévus pendant cette période ?
+
+[RÉPONSE ATTENDUE ~400 tokens]
+Pour des congés de 3 semaines (plus de 2 semaines), le délai de prévenance minimum est
+de 6 semaines avant le début de l'absence. Votre demande doit être soumise via le système
+RH et validée par votre manager direct.
+
+Concernant votre télétravail : selon l'accord télétravail 2023 (article 12), les jours
+de télétravail qui tombent pendant vos congés sont automatiquement annulés. Il n'est pas
+possible de les reporter ni d'obtenir une compensation.
+
+En pratique, cela signifie que si vous avez planifié des jours de télétravail en août,
+ils seront supprimés dès lors que vos congés couvrent les mêmes dates. Aucune action
+supplémentaire n'est nécessaire de votre part.
