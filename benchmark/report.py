@@ -429,13 +429,32 @@ def _render(today, retrieved, usd_eur, scenario_ids, by_scenario, be_by_scenario
   </section>
 
   <footer>
-    <p>Sources : Vertex AI (S3NS proxy) · Azure OpenAI (Bleu proxy) · scaleway.com · ovhcloud.com</p>
-    <p>Throughput OVH : formule <a href="https://github.com/AlexsJones/llmfit">llmfit</a>
-       — tps = (bandwidth_gbps / model_size_gb) × 0.55</p>
-    <p>CLI : <code>python run.py --help</code> ·
-       JSON : <code>python run.py compare --json</code> ·
-       Repo : <a href="https://github.com/desmartinguillaume-a11y/sovereign-llm-bench">sovereign-llm-bench</a>
-       · Apache 2.0</p>
+    <p><strong>Sources de tarifs</strong> (prix list publics au {retrieved}, sans remise volume)</p>
+    <p>
+      S3NS proxy →
+      <a href="https://cloud.google.com/vertex-ai/generative-ai/pricing">cloud.google.com/vertex-ai/generative-ai/pricing</a>
+      &nbsp;·&nbsp;
+      Bleu proxy →
+      <a href="https://azure.microsoft.com/en-us/pricing/details/ai-foundry-models/aoai/">azure.microsoft.com pricing/ai-foundry-models/aoai</a>
+      &nbsp;·&nbsp;
+      Scaleway →
+      <a href="https://www.scaleway.com/en/pricing/model-as-a-service/">scaleway.com/pricing/model-as-a-service</a>
+      &nbsp;·&nbsp;
+      OVH GPU →
+      <a href="https://www.ovhcloud.com/en/public-cloud/prices/">ovhcloud.com/public-cloud/prices</a>
+    </p>
+    <p>
+      Throughput OVH : formule <a href="https://github.com/AlexsJones/llmfit">llmfit</a>
+      — tps = (bandwidth_gbps / model_size_gb) × 0.55
+      &nbsp;·&nbsp;
+      ⚠ S3NS / Bleu : tarifs proxy — contacter les providers pour les tarifs contractuels souverains réels
+    </p>
+    <p>
+      CLI : <code>python run.py --help</code> ·
+      JSON : <code>python run.py compare --json</code> ·
+      Repo : <a href="https://github.com/desmartinguillaume-a11y/sovereign-llm-bench">sovereign-llm-bench</a>
+      · Apache 2.0
+    </p>
   </footer>
 
 </div>
