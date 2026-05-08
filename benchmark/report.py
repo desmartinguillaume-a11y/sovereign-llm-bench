@@ -5,7 +5,6 @@ Visualisation : heat-map matrix + provider cards + breakeven interactif.
 
 from __future__ import annotations
 
-import json
 from datetime import date
 from pathlib import Path
 
@@ -212,34 +211,6 @@ def _render(today, retrieved, usd_eur, scenario_ids, by_scenario, be_by_scenario
               <td>{winner_html}</td>
             </tr>"""
 
-    # ── Chart.js data ────────────────────────────────────────────────────
-    chart_labels = [f"{s} — {by_scenario[s][next(iter(by_scenario[s]))].scenario_name}" for s in scenario_ids]
-    cost_ds = []
-    for pid in PROVIDER_ORDER:
-        m = PROVIDER_META[pid]
-        cost_ds.append({
-            "label": m["label"],
-            "data":  [round(by_scenario[s][pid].cost_month_eur) if pid in by_scenario.get(s, {}) else 0 for s in scenario_ids],
-            "backgroundColor": m["color"],
-            "borderRadius": 4,
-        })
-
-    cpm_ds = []
-    for pid in PROVIDER_ORDER:
-        m = PROVIDER_META[pid]
-        cpm_ds.append({
-            "label": m["label"],
-            "data":  [round(by_scenario[s][pid].cost_per_million_tokens_eur, 4) if pid in by_scenario.get(s, {}) else 0 for s in scenario_ids],
-            "backgroundColor": m["color"],
-            "borderRadius": 4,
-        })
-
-    chart_json = json.dumps({
-        "labels": chart_labels,
-        "cost": cost_ds,
-        "cpm": cpm_ds,
-    }, ensure_ascii=False)
-
     # ── Full data table ──────────────────────────────────────────────────
     rows_html = ""
     for sid in scenario_ids:
@@ -273,9 +244,6 @@ def _render(today, retrieved, usd_eur, scenario_ids, by_scenario, be_by_scenario
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Sovereign LLM Bench — {today}</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"
-    integrity="sha512-ZwR1/gSZM3ai6vCdI+LVF1zSq/5HznD3oD+sCoJrzXJ+yKen9RtNm9nNkyfknyIF8eFgW8phTKvAanV/oJXg=="
-    crossorigin="anonymous" referrerpolicy="no-referrer"></script>
   <style>
     :root{{--bg:#F7F8FA;--card:#fff;--border:#E2E6EA;--text:#111827;--muted:#6B7280;
           --radius:10px;--shadow:0 1px 4px rgba(0,0,0,.08)}}
@@ -331,13 +299,6 @@ def _render(today, retrieved, usd_eur, scenario_ids, by_scenario, be_by_scenario
     .winner-cell{{padding:8px 12px;min-width:110px}}
     .chip-winner{{display:inline-block;font-size:11px;font-weight:700;
                   padding:3px 10px;border-radius:999px}}
-
-    /* charts */
-    .chart-grid{{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:28px}}
-    @media(max-width:800px){{.chart-grid{{grid-template-columns:1fr}}}}
-    .chart-card{{padding:20px}}
-    .chart-card h3{{font-size:13px;font-weight:600;margin-bottom:14px;color:var(--muted)}}
-    .chart-wrap{{position:relative;height:280px}}
 
     /* breakeven */
     table.be{{width:100%;border-collapse:collapse;font-size:13px}}
@@ -423,18 +384,6 @@ def _render(today, retrieved, usd_eur, scenario_ids, by_scenario, be_by_scenario
     </div>
   </section>
 
-  <!-- CHARTS -->
-  <div class="chart-grid">
-    <div class="card chart-card">
-      <h3>Coût mensuel par scénario (€)</h3>
-      <div class="chart-wrap"><canvas id="chartCost"></canvas></div>
-    </div>
-    <div class="card chart-card">
-      <h3>Coût par million de tokens (€, échelle log)</h3>
-      <div class="chart-wrap"><canvas id="chartCPM"></canvas></div>
-    </div>
-  </div>
-
   <!-- BREAKEVEN -->
   <section>
     <h2>Seuils de rentabilité — OVH self-hosted vs API</h2>
@@ -491,29 +440,6 @@ def _render(today, retrieved, usd_eur, scenario_ids, by_scenario, be_by_scenario
 
 </div>
 
-<script>
-const D = {chart_json};
-const fmt = v => "€" + Number(v).toLocaleString("fr-FR");
-const baseOpts = (log) => ({{
-  responsive:true, maintainAspectRatio:false,
-  plugins:{{
-    legend:{{ position:"bottom", labels:{{ boxWidth:11, font:{{ size:11 }} }} }},
-    tooltip:{{ callbacks:{{ label: c => ` ${{c.dataset.label}}: ${{fmt(c.raw)}}` }} }}
-  }},
-  scales:{{
-    x:{{ grid:{{ display:false }}, ticks:{{ font:{{ size:10 }} }} }},
-    y:{{ type: log?"logarithmic":"linear",
-         grid:{{ color:"#F0F0F0" }},
-         ticks:{{ font:{{ size:11 }}, callback: v => fmt(v) }} }}
-  }}
-}});
-new Chart(document.getElementById("chartCost"), {{
-  type:"bar", data:{{ labels:D.labels, datasets:D.cost }}, options:baseOpts(false)
-}});
-new Chart(document.getElementById("chartCPM"), {{
-  type:"bar", data:{{ labels:D.labels, datasets:D.cpm }}, options:baseOpts(true)
-}});
-</script>
 </body>
 </html>"""
 

@@ -4,9 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Sovereign LLM Bench — 2026-05-08</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"
-    integrity="sha512-ZwR1/gSZM3ai6vCdI+LVF1zSq/5HznD3oD+sCoJrzXJ+yKen9RtNm9nNkyfknyIF8eFgW8phTKvAanV/oJXg=="
-    crossorigin="anonymous" referrerpolicy="no-referrer"></script>
   <style>
     :root{--bg:#F7F8FA;--card:#fff;--border:#E2E6EA;--text:#111827;--muted:#6B7280;
           --radius:10px;--shadow:0 1px 4px rgba(0,0,0,.08)}
@@ -62,13 +59,6 @@
     .winner-cell{padding:8px 12px;min-width:110px}
     .chip-winner{display:inline-block;font-size:11px;font-weight:700;
                   padding:3px 10px;border-radius:999px}
-
-    /* charts */
-    .chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:28px}
-    @media(max-width:800px){.chart-grid{grid-template-columns:1fr}}
-    .chart-card{padding:20px}
-    .chart-card h3{font-size:13px;font-weight:600;margin-bottom:14px;color:var(--muted)}
-    .chart-wrap{position:relative;height:280px}
 
     /* breakeven */
     table.be{width:100%;border-collapse:collapse;font-size:13px}
@@ -249,18 +239,6 @@
       Encadré = moins cher sur ce scénario.
     </div>
   </section>
-
-  <!-- CHARTS -->
-  <div class="chart-grid">
-    <div class="card chart-card">
-      <h3>Coût mensuel par scénario (€)</h3>
-      <div class="chart-wrap"><canvas id="chartCost"></canvas></div>
-    </div>
-    <div class="card chart-card">
-      <h3>Coût par million de tokens (€, échelle log)</h3>
-      <div class="chart-wrap"><canvas id="chartCPM"></canvas></div>
-    </div>
-  </div>
 
   <!-- BREAKEVEN -->
   <section>
@@ -586,28 +564,5 @@
 
 </div>
 
-<script>
-const D = {"labels": ["S1 — RAG léger", "S2 — Chatbot support client", "S3 — Call center — résumé post-appel", "S4 — Call center temps réel (extrême)"], "cost": [{"label": "S3NS", "data": [192, 1290, 405, 1477], "backgroundColor": "#4285F4", "borderRadius": 4}, {"label": "Bleu", "data": [178, 1579, 607, 2215], "backgroundColor": "#00A4EF", "borderRadius": 4}, {"label": "Scaleway", "data": [10, 112, 616, 2100], "backgroundColor": "#7B2D8B", "borderRadius": 4}, {"label": "OVH", "data": [121, 484, 60, 605], "backgroundColor": "#123F6D", "borderRadius": 4}], "cpm": [{"label": "S3NS", "data": [4.37, 1.955, 0.1045, 0.1195], "backgroundColor": "#4285F4", "borderRadius": 4}, {"label": "Bleu", "data": [4.048, 2.392, 0.1568, 0.1793], "backgroundColor": "#00A4EF", "borderRadius": 4}, {"label": "Scaleway", "data": [0.23, 0.17, 0.1591, 0.1699], "backgroundColor": "#7B2D8B", "borderRadius": 4}, {"label": "OVH", "data": [2.75, 0.7333, 0.0156, 0.049], "backgroundColor": "#123F6D", "borderRadius": 4}]};
-const fmt = v => "€" + Number(v).toLocaleString("fr-FR");
-const baseOpts = (log) => ({
-  responsive:true, maintainAspectRatio:false,
-  plugins:{
-    legend:{ position:"bottom", labels:{ boxWidth:11, font:{ size:11 } } },
-    tooltip:{ callbacks:{ label: c => ` ${c.dataset.label}: ${fmt(c.raw)}` } }
-  },
-  scales:{
-    x:{ grid:{ display:false }, ticks:{ font:{ size:10 } } },
-    y:{ type: log?"logarithmic":"linear",
-         grid:{ color:"#F0F0F0" },
-         ticks:{ font:{ size:11 }, callback: v => fmt(v) } }
-  }
-});
-new Chart(document.getElementById("chartCost"), {
-  type:"bar", data:{ labels:D.labels, datasets:D.cost }, options:baseOpts(false)
-});
-new Chart(document.getElementById("chartCPM"), {
-  type:"bar", data:{ labels:D.labels, datasets:D.cpm }, options:baseOpts(true)
-});
-</script>
 </body>
 </html>
