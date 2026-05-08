@@ -163,3 +163,16 @@ Les PR sont bienvenues pour :
 - Ajouter un nouveau provider EU (Clever Cloud, Outscale, Mistral AI…)
 - Ajouter un scénario métier (juridique, médical, code…)
 - Améliorer le modèle de throughput OVH
+
+---
+
+## Auteur
+
+Guillaume Desmartin — Director @ BCG Platinion, scope Cloud / Infrastructure /
+Souveraineté pour grands comptes européens.
+
+Ce repo est un projet personnel d'apprentissage et de documentation publique
+sur le FinOps IA en environnement souverain. Il ne représente pas BCG ou
+BCG Platinion.
+
+LinkedIn : [linkedin.com/in/guillaumedesmartin](https://linkedin.com/in/guillaumedesmartin)
