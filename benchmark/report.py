@@ -12,7 +12,7 @@ from benchmark.tco_calculator import BreakevenResult, TCOCalculator, TCOResult
 
 RESULTS_DIR = Path(__file__).parent.parent / "results"
 
-PROVIDER_ORDER = ["s3ns", "bleu", "scaleway", "ovh_selfhosted"]
+PROVIDER_ORDER = ["s3ns", "bleu", "scaleway", "ovh_selfhosted", "onprem_openshift"]
 PROVIDER_META = {
     "s3ns": {
         "label":  "S3NS",
@@ -50,6 +50,15 @@ PROVIDER_META = {
         "cert":   "HDS · SecNumCloud",
         "type":   "Infrastructure",
     },
+    "onprem_openshift": {
+        "label":  "On-prem",
+        "sub":    "OpenShift GPU (capex)",
+        "color":  "#7C3AED",
+        "light":  "#F5F3FF",
+        "badge":  "capex",
+        "cert":   "Votre datacenter",
+        "type":   "On-premise",
+    },
 }
 
 
@@ -64,9 +73,9 @@ def build(results: list[TCOResult], breakevens: list[BreakevenResult]) -> Path:
 
     scenario_ids = sorted(by_scenario.keys())
 
-    be_by_scenario: dict[str, dict[str, BreakevenResult]] = {}
+    be_by_scenario: dict[str, dict[tuple, BreakevenResult]] = {}
     for be in breakevens:
-        be_by_scenario.setdefault(be.scenario_id, {})[be.api_provider] = be
+        be_by_scenario.setdefault(be.scenario_id, {})[(be.reference_provider, be.api_provider)] = be
 
     calc = TCOCalculator()
     usd_eur = calc.usd_to_eur
@@ -92,8 +101,8 @@ def _render(today, retrieved, usd_eur, scenario_ids, by_scenario, be_by_scenario
     cards_html = ""
     for pid in PROVIDER_ORDER:
         m = PROVIDER_META[pid]
-        badge_cls = {"proxy": "badge-warn", "officiel": "badge-ok", "infra": "badge-info"}[m["badge"]]
-        badge_lbl = {"proxy": "⚠ Proxy", "officiel": "✓ Officiel", "infra": "GPU €/h"}[m["badge"]]
+        badge_cls = {"proxy": "badge-warn", "officiel": "badge-ok", "infra": "badge-info", "capex": "badge-capex"}[m["badge"]]
+        badge_lbl = {"proxy": "⚠ Proxy", "officiel": "✓ Officiel", "infra": "GPU €/h", "capex": "Capex"}[m["badge"]]
 
         # best €/M tokens across scenarios for this provider
         cpm_vals = [
@@ -185,24 +194,26 @@ def _render(today, retrieved, usd_eur, scenario_ids, by_scenario, be_by_scenario
     be_rows = ""
     for sid in scenario_ids:
         bes = be_by_scenario.get(sid, {})
-        for pid in PROVIDER_ORDER:
-            if pid == "ovh_selfhosted":
-                continue
-            be = bes.get(pid)
-            if be is None:
-                continue
-            m = PROVIDER_META[pid]
-            ovh_m = PROVIDER_META["ovh_selfhosted"]
-            if be.breakeven_months == float("inf"):
-                be_str = '<span class="muted">jamais</span>'
-                winner_html = f'<span class="chip" style="background:{m["light"]};color:{m["color"]}">{m["label"]}</span>'
-            else:
-                be_str = f"{be.breakeven_months:.0f} mois"
-                winner_html = f'<span class="chip" style="background:{ovh_m["light"]};color:{ovh_m["color"]}">OVH self-hosted</span>'
-            diff = abs(be.api_cost_month_eur - be.selfhosted_cost_month_eur)
-            be_rows += f"""
+        for ref_id in ["ovh_selfhosted", "onprem_openshift"]:
+            ref_m = PROVIDER_META.get(ref_id, {})
+            for pid in PROVIDER_ORDER:
+                if pid in ("ovh_selfhosted", "onprem_openshift"):
+                    continue
+                be = bes.get((ref_id, pid))
+                if be is None:
+                    continue
+                m = PROVIDER_META[pid]
+                if be.breakeven_months == float("inf"):
+                    be_str = '<span class="muted">jamais</span>'
+                    winner_html = f'<span class="chip" style="background:{m["light"]};color:{m["color"]}">{m["label"]}</span>'
+                else:
+                    be_str = f"{be.breakeven_months:.0f} mois"
+                    winner_html = f'<span class="chip" style="background:{ref_m["light"]};color:{ref_m["color"]}">{ref_m["label"]}</span>'
+                diff = abs(be.api_cost_month_eur - be.selfhosted_cost_month_eur)
+                be_rows += f"""
             <tr>
               <td><strong>{sid}</strong></td>
+              <td><span style="color:{ref_m['color']};font-weight:600">{ref_m['label']}</span></td>
               <td><span style="color:{m['color']};font-weight:600">{m['label']}</span></td>
               <td class="num">€{be.selfhosted_cost_month_eur:,.0f}</td>
               <td class="num">€{be.api_cost_month_eur:,.0f}</td>
@@ -278,9 +289,10 @@ def _render(today, retrieved, usd_eur, scenario_ids, by_scenario, be_by_scenario
     /* badges */
     .badge{{display:inline-flex;align-items:center;font-size:10px;font-weight:700;
             padding:2px 7px;border-radius:999px;white-space:nowrap}}
-    .badge-warn{{background:#FEF3C7;color:#92400E}}
-    .badge-ok  {{background:#D1FAE5;color:#065F46}}
-    .badge-info{{background:#DBEAFE;color:#1E40AF}}
+    .badge-warn {{background:#FEF3C7;color:#92400E}}
+    .badge-ok   {{background:#D1FAE5;color:#065F46}}
+    .badge-info {{background:#DBEAFE;color:#1E40AF}}
+    .badge-capex{{background:#EDE9FE;color:#5B21B6}}
 
     /* heat-map matrix */
     .matrix-wrap{{overflow-x:auto}}
@@ -356,6 +368,7 @@ def _render(today, retrieved, usd_eur, scenario_ids, by_scenario, be_by_scenario
       <span><span class="badge badge-warn">Proxy</span> Prix estimé via plateforme sous-jacente (pas de tarif public LLM)</span>
       <span><span class="badge badge-ok">Officiel</span> Prix publics sur le site du provider</span>
       <span><span class="badge badge-info">GPU €/h</span> Coût GPU converti en coût/token via llmfit</span>
+      <span><span class="badge badge-capex">Capex</span> Coût fixe annuel amorti — hypothèses assumptions.yaml</span>
     </div>
   </section>
 
@@ -392,8 +405,9 @@ def _render(today, retrieved, usd_eur, scenario_ids, by_scenario, be_by_scenario
         <thead>
           <tr>
             <th>Scénario</th>
+            <th>Référence</th>
             <th>vs Provider API</th>
-            <th class="num">OVH / mois</th>
+            <th class="num">Géré / mois</th>
             <th class="num">API / mois</th>
             <th class="num">Écart</th>
             <th class="num">Breakeven*</th>
@@ -404,7 +418,8 @@ def _render(today, retrieved, usd_eur, scenario_ids, by_scenario, be_by_scenario
       </table>
     </div>
     <p style="font-size:11px;color:var(--muted);margin-top:8px">
-      * Breakeven = mois nécessaires pour amortir 12 mois de GPU (proxy capex) grâce à l'économie mensuelle.
+      * Breakeven OVH = mois pour amortir 12 mois de GPU via l'économie mensuelle.
+        Breakeven On-prem = mois pour amortir le prix d'achat serveur (€280k) via l'économie mensuelle.
     </p>
   </section>
 

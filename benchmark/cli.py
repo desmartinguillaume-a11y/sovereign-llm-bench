@@ -7,12 +7,13 @@ from __future__ import annotations
 
 from benchmark.tco_calculator import BreakevenResult, TCOCalculator, TCOResult
 
-PROVIDER_ORDER  = ["s3ns", "bleu", "scaleway", "ovh_selfhosted"]
+PROVIDER_ORDER  = ["s3ns", "bleu", "scaleway", "ovh_selfhosted", "onprem_openshift"]
 PROVIDER_LABELS = {
-    "s3ns":           "S3NS (Thales×GCP) [proxy]",
-    "bleu":           "Bleu (MS×Orange)  [proxy]",
-    "scaleway":       "Scaleway FR       [officiel]",
-    "ovh_selfhosted": "OVH Self-hosted   [GPU €/h]",
+    "s3ns":             "S3NS (Thales×GCP) [proxy]",
+    "bleu":             "Bleu (MS×Orange)  [proxy]",
+    "scaleway":         "Scaleway FR       [officiel]",
+    "ovh_selfhosted":   "OVH Self-hosted   [GPU €/h]",
+    "onprem_openshift": "On-prem OpenShift [capex]",
 }
 COL_W = 18
 

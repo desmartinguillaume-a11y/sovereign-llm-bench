@@ -23,6 +23,7 @@ import yaml
 CONFIG_DIR = Path(__file__).parent.parent / "config"
 WORKING_DAYS_PER_MONTH = 22
 MONTHS_PER_YEAR = 12
+HOURS_PER_YEAR = 8760
 
 
 @dataclass
@@ -81,9 +82,11 @@ class TCOCalculator:
         self,
         pricing_path: Path = CONFIG_DIR / "pricing.yaml",
         scenarios_path: Path = CONFIG_DIR / "scenarios.yaml",
+        assumptions_path: Path = CONFIG_DIR / "assumptions.yaml",
     ) -> None:
         self.pricing = self._load_yaml(pricing_path)
         self.scenarios = self._load_yaml(scenarios_path)
+        self.assumptions = self._load_yaml(assumptions_path) if assumptions_path.exists() else None
         self.usd_to_eur: float = self.pricing["metadata"]["usd_to_eur"]
 
     # ------------------------------------------------------------------
@@ -96,6 +99,8 @@ class TCOCalculator:
             for provider_id in self.pricing["providers"]:
                 result = self._compute_one(scenario_id, scenario, provider_id)
                 results.append(result)
+            if self.assumptions:
+                results.append(self._compute_onprem(scenario_id, scenario))
         return results
 
     def compute_breakeven(self, results: list[TCOResult]) -> list[BreakevenResult]:
@@ -106,42 +111,49 @@ class TCOCalculator:
         for r in results:
             by_scenario.setdefault(r.scenario_id, {})[r.provider] = r
 
-        for scenario_id, providers in by_scenario.items():
-            selfhosted = providers.get("ovh_selfhosted")
-            if selfhosted is None:
-                continue
+        self_providers = [p for p in ["ovh_selfhosted", "onprem_openshift"] if any(p in pv for pv in by_scenario.values())]
 
-            for provider_id, api_result in providers.items():
-                if provider_id == "ovh_selfhosted":
+        for scenario_id, providers in by_scenario.items():
+            for ref_id in self_providers:
+                ref = providers.get(ref_id)
+                if ref is None:
                     continue
 
-                be = BreakevenResult(
-                    scenario_id=scenario_id,
-                    scenario_name=selfhosted.scenario_name,
-                    api_provider=provider_id,
-                    api_model=api_result.model_display_name,
-                    selfhosted_cost_month_eur=selfhosted.cost_month_eur,
-                    api_cost_month_eur=api_result.cost_month_eur,
-                )
+                for provider_id, api_result in providers.items():
+                    if provider_id in ("ovh_selfhosted", "onprem_openshift"):
+                        continue
 
-                if selfhosted.cost_month_eur < api_result.cost_month_eur:
-                    diff = api_result.cost_month_eur - selfhosted.cost_month_eur
-                    be.cheaper_at_scale = "ovh_selfhosted"
-                    be.notes = f"OVH économise €{diff:,.0f}/mois vs {provider_id}"
-                else:
-                    diff = selfhosted.cost_month_eur - api_result.cost_month_eur
-                    be.cheaper_at_scale = provider_id
-                    be.notes = f"API moins chère de €{diff:,.0f}/mois"
+                    be = BreakevenResult(
+                        scenario_id=scenario_id,
+                        scenario_name=ref.scenario_name,
+                        reference_provider=ref_id,
+                        api_provider=provider_id,
+                        api_model=api_result.model_display_name,
+                        selfhosted_cost_month_eur=ref.cost_month_eur,
+                        api_cost_month_eur=api_result.cost_month_eur,
+                    )
 
-                # Breakeven = capex proxy (12 mois GPU) / économie mensuelle
-                if api_result.cost_month_eur > selfhosted.cost_month_eur:
-                    monthly_saving = api_result.cost_month_eur - selfhosted.cost_month_eur
-                    capex_proxy = self._monthly_gpu_cost_eur(scenario_id) * 12
-                    be.breakeven_months = capex_proxy / monthly_saving if monthly_saving > 0 else math.inf
-                else:
-                    be.breakeven_months = math.inf
+                    if ref.cost_month_eur < api_result.cost_month_eur:
+                        diff = api_result.cost_month_eur - ref.cost_month_eur
+                        be.cheaper_at_scale = ref_id
+                        be.notes = f"{ref_id} économise €{diff:,.0f}/mois vs {provider_id}"
+                    else:
+                        diff = ref.cost_month_eur - api_result.cost_month_eur
+                        be.cheaper_at_scale = provider_id
+                        be.notes = f"API moins chère de €{diff:,.0f}/mois"
 
-                breakevens.append(be)
+                    if api_result.cost_month_eur > ref.cost_month_eur:
+                        monthly_saving = api_result.cost_month_eur - ref.cost_month_eur
+                        if ref_id == "onprem_openshift" and self.assumptions:
+                            cfg = self.assumptions["onprem_gpu_server"]
+                            capex_proxy = cfg["purchase_price_eur"]
+                        else:
+                            capex_proxy = self._monthly_gpu_cost_eur(scenario_id) * 12
+                        be.breakeven_months = capex_proxy / monthly_saving if monthly_saving > 0 else math.inf
+                    else:
+                        be.breakeven_months = math.inf
+
+                    breakevens.append(be)
 
         return breakevens
 
@@ -287,6 +299,63 @@ class TCOCalculator:
             gpus_required=gpus,
             cost_per_million_tokens_eur=cost_per_m,
             pricing_status=provider_cfg.get("pricing_status", ""),
+            notes=notes,
+        )
+
+    def _compute_onprem(self, scenario_id: str, scenario: dict) -> TCOResult:
+        """On-prem capex model: fixed annual cost split across 12 calendar months."""
+        cfg = self.assumptions["onprem_gpu_server"]
+        tput = self.assumptions["throughput"]
+
+        annual_capex        = cfg["purchase_price_eur"] / cfg["amortization_years"]
+        annual_maintenance  = cfg["purchase_price_eur"] * cfg["maintenance_rate"]
+        annual_electricity  = (
+            cfg["gpu_tdp_watts"] / 1000 * cfg["pue_datacenter"] * HOURS_PER_YEAR * cfg["electricity_eur_per_kwh"]
+        )
+        annual_license = cfg["openshift_license_eur_per_year"]
+        annual_ops     = cfg["ops_fte"] * cfg["ops_fte_cost_eur_per_year"]
+
+        per_server_annual = annual_capex + annual_maintenance + annual_electricity + annual_license + annual_ops
+
+        # Scale servers to meet output throughput demand
+        server_tps    = tput["tokens_per_second_per_gpu"] * cfg["gpu_count"]
+        tokens_out    = scenario["tokens_output_per_day"]
+        required_tps  = tokens_out / 86400
+        servers_needed = max(1, math.ceil(required_tps / server_tps))
+
+        total_annual   = per_server_annual * servers_needed
+        # On-prem runs 24/7: use calendar months, not working days
+        cost_month_eur = total_annual / MONTHS_PER_YEAR
+        cost_day_eur   = total_annual / 365
+        cost_year_eur  = total_annual
+
+        tokens_in     = scenario["tokens_input_per_day"]
+        total_tokens  = tokens_in + tokens_out
+        cost_per_m    = (cost_day_eur / total_tokens * 1_000_000) if total_tokens else 0
+
+        notes = (
+            f"Capex: €{annual_capex:,.0f}/an | "
+            f"Maintenance: €{annual_maintenance:,.0f}/an | "
+            f"Elec: €{annual_electricity:,.0f}/an | "
+            f"Licence: €{annual_license:,.0f}/an | "
+            f"Ops: €{annual_ops:,.0f}/an | "
+            f"Serveurs: {servers_needed} × {cfg['gpu_count']} GPU"
+        )
+
+        return TCOResult(
+            scenario_id=scenario_id,
+            scenario_name=scenario["name"],
+            provider="onprem_openshift",
+            model_id="llama3-70b-fp16",
+            model_display_name="Llama 3 70B (vLLM, 4×A100)",
+            tokens_input_per_day=tokens_in,
+            tokens_output_per_day=tokens_out,
+            cost_day_eur=cost_day_eur,
+            cost_month_eur=cost_month_eur,
+            cost_year_eur=cost_year_eur,
+            gpus_required=cfg["gpu_count"] * servers_needed,
+            cost_per_million_tokens_eur=cost_per_m,
+            pricing_status="HYPOTHÈSES — assumptions.yaml",
             notes=notes,
         )
 
