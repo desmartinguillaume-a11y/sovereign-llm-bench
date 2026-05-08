@@ -113,10 +113,10 @@ def main() -> None:
 
     # ── commande par défaut : rapport complet ─────────────────────────────
 
-    results, breakevens = run_tco(verbose=not args.quiet)
+    results, breakevens = run_tco(verbose=not args.quiet and not args.json)
 
     report_path = build_report(results, breakevens)
-    if not args.quiet:
+    if not args.quiet and not args.json:
         print(f"  {report_path}")
 
     if args.json:
@@ -125,6 +125,7 @@ def main() -> None:
             "breakeven": [
                 {
                     "scenario_id":              be.scenario_id,
+                    "reference_provider":        be.reference_provider,
                     "api_provider":             be.api_provider,
                     "selfhosted_cost_month_eur": round(be.selfhosted_cost_month_eur, 2),
                     "api_cost_month_eur":        round(be.api_cost_month_eur, 2),

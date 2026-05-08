@@ -60,7 +60,7 @@ def _write_csv(results: list[TCOResult], breakevens: list[BreakevenResult]) -> N
 
     be_path = RESULTS_DIR / f"breakeven_{today}.csv"
     be_fields = [
-        "scenario_id", "scenario_name", "api_provider", "api_model",
+        "scenario_id", "scenario_name", "reference_provider", "api_provider", "api_model",
         "selfhosted_cost_month_eur", "api_cost_month_eur",
         "breakeven_months", "cheaper_at_scale", "notes",
     ]
@@ -71,6 +71,7 @@ def _write_csv(results: list[TCOResult], breakevens: list[BreakevenResult]) -> N
             writer.writerow({
                 "scenario_id": be.scenario_id,
                 "scenario_name": be.scenario_name,
+                "reference_provider": be.reference_provider,
                 "api_provider": be.api_provider,
                 "api_model": be.api_model,
                 "selfhosted_cost_month_eur": round(be.selfhosted_cost_month_eur, 2),
@@ -80,7 +81,7 @@ def _write_csv(results: list[TCOResult], breakevens: list[BreakevenResult]) -> N
                 "notes": be.notes,
             })
 
-    print(f"\nResults written to:\n  {tco_path}\n  {be_path}")
+    print(f"\nResults written to:\n  {tco_path}\n  {be_path}", file=sys.stderr)
 
 
 # ------------------------------------------------------------------
