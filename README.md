@@ -2,10 +2,6 @@
 
 **Benchmark reproductible du TCO réel des LLM en environnement souverain français.**
 
-Audience : DSI / CIO grands comptes qui évaluent un déploiement LLM et veulent comparer
-le coût total réel — pas un benchmark de performance, pas un classement qualitatif,
-mais un coût en euros pour leur volume de production.
-
 > Licence Apache 2.0 — contributions bienvenues.
 
 ---
@@ -32,13 +28,13 @@ Vérifiez toujours les tarifs en vigueur avant toute décision d'achat.
 
 ## Ce que ce repo fait
 
-Pour 4 infrastructures souveraines françaises × 4 scénarios de charge grands comptes,
+Pour 4 infrastructures souveraines françaises × 4 scénarios de charge,
 il calcule :
 
-- **Coût journalier / mensuel / annuel** en euros
+- **Coût journalier / mensuel / annuel** en euros par (scénario, provider, modèle)
 - **Seuil de rentabilité** du self-hosted OVH vs chaque API pay-per-token
 - Un **rapport HTML** auto-contenu avec heat-map et tableaux breakeven
-- Des **CSV exportables** pour intégration dans un business case
+- Des **CSV exportables**
 
 Le calcul TCO tourne **sans aucun appel API** — le pricing est versionné dans `config/pricing.yaml`.
 
@@ -52,10 +48,6 @@ Le calcul TCO tourne **sans aucun appel API** — le pricing est versionné dans
 | [Bleu](https://bleu.cloud) (Microsoft × Orange) | API pay-per-token | SecNumCloud en cours | [Azure OpenAI pricing](https://azure.microsoft.com/en-us/pricing/details/ai-foundry-models/aoai/) ⚠ proxy |
 | [Scaleway](https://www.scaleway.com/en/pricing/model-as-a-service/) Generative APIs | API pay-per-token | HDS · ISO 27001 | [scaleway.com/pricing](https://www.scaleway.com/en/pricing/model-as-a-service/) ✓ officiel |
 | [OVH Self-hosted](https://www.ovhcloud.com/en/public-cloud/prices/) GPU cloud | GPU/heure | HDS · SecNumCloud | [ovhcloud.com/prices](https://www.ovhcloud.com/en/public-cloud/prices/) ✓ officiel |
-
-> **⚠ Proxy** : S3NS et Bleu n'ont pas de tarifs LLM publics. Les prix utilisés sont ceux
-> des plateformes sous-jacentes (Vertex AI / Azure OpenAI). Un surcoût souverain peut s'appliquer
-> — contacter S3NS / Bleu pour les tarifs contractuels réels.
 
 ---
 
@@ -163,16 +155,3 @@ Les PR sont bienvenues pour :
 - Ajouter un nouveau provider EU (Clever Cloud, Outscale, Mistral AI…)
 - Ajouter un scénario métier (juridique, médical, code…)
 - Améliorer le modèle de throughput OVH
-
----
-
-## Auteur
-
-Guillaume Desmartin — Director @ BCG Platinion, scope Cloud / Infrastructure /
-Souveraineté pour grands comptes européens.
-
-Ce repo est un projet personnel d'apprentissage et de documentation publique
-sur le FinOps IA en environnement souverain. Il ne représente pas BCG ou
-BCG Platinion.
-
-LinkedIn : [linkedin.com/in/guillaumedesmartin](https://linkedin.com/in/guillaumedesmartin)
