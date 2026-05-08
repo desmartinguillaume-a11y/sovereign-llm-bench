@@ -89,9 +89,11 @@ providers:
     data_residency: "France (Paris)"
     pricing_status: "OFFICIEL — tarifs publics sur scaleway.com"
     source_url: "https://www.scaleway.com/en/pricing/model-as-a-service/"
+    verify_manually: true
     # Tarif plat tous modèles sur Generative APIs (mars 2026, confirmé multiples sources).
     # Même prix pour Llama 3.1 70B et Mistral Large 3 — serverless partagé.
     # Source comparatif: juicefactory.ai/en/guides/eu-llm-api-comparison (mars 2026)
+    # NOTE: la page officielle retourne 403 aux bots — vérifier manuellement sur scaleway.com
     models:
       llama-3.1-70b-instruct:
         display_name: "Llama 3.1 70B Instruct"
