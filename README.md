@@ -10,6 +10,26 @@ mais un coût en euros pour leur volume de production.
 
 ---
 
+## ⚠️ Disclaimer
+
+Ce benchmark est construit exclusivement à partir d'informations publiques
+(tarifs publiés sur les sites officiels des fournisseurs, documentation
+technique publique, benchmarks communautaires open source).
+
+Il ne s'appuie sur aucune donnée contractuelle, confidentielle ou interne.
+Les prix S3NS et Bleu sont des proxies basés sur les tarifs publics
+des plateformes sous-jacentes (Vertex AI / Azure OpenAI) —
+les tarifs souverains réels peuvent différer significativement.
+
+Ce repo est un outil d'estimation indicative, pas un devis.
+Les résultats ne constituent pas un engagement tarifaire de la part
+des fournisseurs mentionnés.
+
+Dernière mise à jour des prix : 2026-05-08.
+Vérifiez toujours les tarifs en vigueur avant toute décision d'achat.
+
+---
+
 ## Ce que ce repo fait
 
 Pour 4 infrastructures souveraines françaises × 4 scénarios de charge grands comptes,
