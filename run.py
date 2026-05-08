@@ -18,6 +18,7 @@ from pathlib import Path
 # Allow running from repo root without installing the package
 sys.path.insert(0, str(Path(__file__).parent))
 
+from benchmark.report import build as build_report
 from benchmark.runner import run
 
 
@@ -48,6 +49,9 @@ def main() -> None:
     _load_dotenv()
 
     results, breakevens = run(verbose=not args.quiet)
+
+    report_path = build_report(results, breakevens)
+    print(f"  {report_path}")
 
     if args.validate:
         _run_validation(args.scenario)
