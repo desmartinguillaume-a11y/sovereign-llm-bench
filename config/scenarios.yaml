@@ -20,7 +20,7 @@ scenarios:
     # Model assignment per provider (quality use case → premium model)
     model_selection:
       mistral: "mistral-large-latest"
-      anthropic: "claude-sonnet-3-7"
+      anthropic: "claude-sonnet-4-6"
       azure_openai: "gpt-4o"
       ovh_selfhosted: "llama3-70b-q4"
     sla:
@@ -42,7 +42,7 @@ scenarios:
     tokens_total_per_day: 30_000_000   # ~30M (brief says 50M — adjusted for realistic context window)
     model_selection:
       mistral: "mistral-large-latest"
-      anthropic: "claude-sonnet-3-7"
+      anthropic: "claude-sonnet-4-6"
       azure_openai: "gpt-4o"
       ovh_selfhosted: "llama3-70b-q4"
     sla:
@@ -65,7 +65,7 @@ scenarios:
     # Volume use case → cost-optimised model
     model_selection:
       mistral: "mistral-small-latest"
-      anthropic: "claude-haiku-3-5"
+      anthropic: "claude-haiku-4-5"
       azure_openai: "gpt-4o-mini"
       ovh_selfhosted: "llama3-70b-q4"
     sla:
@@ -99,7 +99,7 @@ scenarios:
     tokens_total_per_day: 561_600_000   # ~562M (brief says 1B+ — scales beyond 2000 agents)
     model_selection:
       mistral: "mistral-small-latest"
-      anthropic: "claude-haiku-3-5"
+      anthropic: "claude-haiku-4-5"
       azure_openai: "gpt-4o-mini"
       ovh_selfhosted: "llama3-70b-q4"
     sla:
