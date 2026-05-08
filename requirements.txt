@@ -1,0 +1,8 @@
+# Core (required)
+pyyaml>=6.0
+
+# Optional — live API validation only (not needed for TCO computation)
+# anthropic>=0.50.0
+# mistralai>=1.0.0
+# openai>=1.30.0       # used by both Azure OpenAI and OVH self-hosted (vLLM)
+# python-dotenv>=1.0.0

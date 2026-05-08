@@ -1,0 +1,98 @@
+# Load scenarios for sovereign-llm-bench
+# 4 scénarios grands comptes EU, modèles assignés aux 4 cloud souverains FR.
+
+scenarios:
+
+  S1:
+    name: "RAG léger"
+    description: "Q&A documentation interne — 200 utilisateurs, 5 échanges/jour"
+    users: 200
+    exchanges_per_user_per_day: 5
+    avg_input_tokens_per_exchange: 1200   # chunks RAG (800) + question (100) + system prompt (300)
+    avg_output_tokens_per_exchange: 400
+    tokens_input_per_day: 1_200_000
+    tokens_output_per_day: 800_000
+    tokens_total_per_day: 2_000_000
+    model_selection:
+      s3ns: "gemini-2.5-pro"
+      bleu: "gpt-4.1"
+      scaleway: "mistral-large-3"
+      ovh_selfhosted: "llama3-70b-q4"
+    # Temps serveur minimum OVH/jour : RAG sporadique, on-demand acceptable
+    ovh_min_hours_per_day: 2
+    sla:
+      latency_p95_ms: 3000
+      availability_pct: 99.5
+
+  S2:
+    name: "Chatbot support client"
+    description: "Support multilingue — 1000 utilisateurs, 10 échanges/jour, historique contexte"
+    users: 1000
+    exchanges_per_user_per_day: 10
+    avg_input_tokens_per_exchange: 2700   # historique (2000) + message (200) + system (500)
+    avg_output_tokens_per_exchange: 300
+    tokens_input_per_day: 27_000_000
+    tokens_output_per_day: 3_000_000
+    tokens_total_per_day: 30_000_000
+    model_selection:
+      s3ns: "gemini-2.5-pro"
+      bleu: "gpt-4.1"
+      scaleway: "mistral-large-3"
+      ovh_selfhosted: "llama3-70b-q4"
+    # Chatbot temps réel : serveur actif pendant heures bureau
+    ovh_min_hours_per_day: 8
+    sla:
+      latency_p95_ms: 5000
+      availability_pct: 99.9
+
+  S3:
+    name: "Call center — résumé post-appel"
+    description: "Résumé automatique post-appel — 2000 agents, ~8 appels/jour"
+    users: 2000
+    calls_per_agent_per_day: 8
+    avg_input_tokens_per_call: 10_500    # transcript (10000) + system prompt (500)
+    avg_output_tokens_per_call: 500
+    tokens_input_per_day: 168_000_000
+    tokens_output_per_day: 8_000_000
+    tokens_total_per_day: 176_000_000
+    model_selection:
+      s3ns: "gemini-2.5-flash-lite"
+      bleu: "gpt-4o-mini"
+      scaleway: "llama-3.1-70b-instruct"
+      ovh_selfhosted: "llama3-70b-q4"
+    # Résumés post-appel asynchrones : on paie seulement le temps de calcul effectif
+    ovh_min_hours_per_day: 0
+    sla:
+      latency_p95_ms: 30000
+      availability_pct: 99.5
+
+  S4:
+    name: "Call center temps réel (extrême)"
+    description: >
+      Analyse sentiment live toutes les 30s + suggestion réponse + résumé post-appel
+      — 2000 agents simultanés
+    users: 2000
+    calls_per_agent_per_day: 8
+    # Inferences par appel :
+    #   A) Sentiment (12×/appel) : 300 input + 50 output = 350 tokens
+    #   B) Suggestion (12×/appel) : 1500 input + 200 output = 1700 tokens
+    #   C) Résumé (1×/appel) : 10000 input + 500 output = 10500 tokens
+    avg_input_tokens_per_call: 31_600
+    avg_output_tokens_per_call: 3_500
+    tokens_input_per_day: 505_600_000
+    tokens_output_per_day: 56_000_000
+    tokens_total_per_day: 561_600_000
+    model_selection:
+      s3ns: "gemini-2.5-flash-lite"
+      bleu: "gpt-4o-mini"
+      scaleway: "llama-3.1-70b-instruct"
+      ovh_selfhosted: "llama3-70b-q4"
+    # Temps réel : 2000 agents sur shift de 8h + 2h astreinte/monitoring
+    ovh_min_hours_per_day: 10
+    sla:
+      latency_p95_ms: 800
+      availability_pct: 99.99
+    notes: >
+      SLA temps réel (<1s) est la contrainte critique.
+      OVH self-hosted doit être dimensionné pour 2000 streams simultanés.
+      Le calcul TCO OVH suppose 1 GPU — à multiplier pour couvrir la concurrence réelle.

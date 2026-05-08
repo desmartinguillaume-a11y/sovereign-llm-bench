@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Sovereign LLM Bench — 2026-05-08</title>
+  <style>
+    :root{--bg:#F7F8FA;--card:#fff;--border:#E2E6EA;--text:#111827;--muted:#6B7280;
+          --radius:10px;--shadow:0 1px 4px rgba(0,0,0,.08)}
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+          background:var(--bg);color:var(--text);font-size:14px;line-height:1.5}
+    a{color:inherit}
+
+    /* layout */
+    header{background:#111827;color:#fff;padding:28px 40px}
+    header h1{font-size:20px;font-weight:700;margin-bottom:4px}
+    header p{opacity:.65;font-size:12px}
+    .container{max-width:1280px;margin:0 auto;padding:28px 24px}
+    section{margin-bottom:36px}
+    section > h2{font-size:16px;font-weight:700;margin-bottom:14px;
+                  display:flex;align-items:center;gap:8px}
+    .card{background:var(--card);border:1px solid var(--border);
+           border-radius:var(--radius);box-shadow:var(--shadow)}
+
+    /* provider cards */
+    .provider-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px}
+    @media(max-width:900px){.provider-grid{grid-template-columns:repeat(2,1fr)}}
+    .provider-card{padding:18px;border-radius:var(--radius);border:1px solid var(--border);
+                    box-shadow:var(--shadow)}
+    .provider-name{font-size:20px;font-weight:800;letter-spacing:-.3px}
+    .provider-sub{font-size:11px;color:var(--muted);margin-top:1px}
+    .provider-type{font-size:11px;font-weight:600;margin-top:10px;text-transform:uppercase;
+                    letter-spacing:.5px;color:var(--muted)}
+    .provider-cert{font-size:11px;color:var(--muted);margin-top:3px}
+    .provider-cpm{font-size:12px;font-weight:600;margin-top:10px;font-variant-numeric:tabular-nums}
+
+    /* badges */
+    .badge{display:inline-flex;align-items:center;font-size:10px;font-weight:700;
+            padding:2px 7px;border-radius:999px;white-space:nowrap}
+    .badge-warn{background:#FEF3C7;color:#92400E}
+    .badge-ok  {background:#D1FAE5;color:#065F46}
+    .badge-info{background:#DBEAFE;color:#1E40AF}
+
+    /* heat-map matrix */
+    .matrix-wrap{overflow-x:auto}
+    .matrix{width:100%;border-collapse:collapse;font-size:13px}
+    .matrix th{padding:10px 14px;text-align:center;font-size:12px;
+                border-bottom:2px solid var(--border);background:var(--bg)}
+    .matrix th:first-child{text-align:left}
+    .matrix td{padding:0;border-bottom:1px solid var(--border);vertical-align:middle}
+    .scenario-cell{padding:12px 14px;min-width:180px}
+    .scenario-name{font-size:11px;color:var(--muted)}
+    .cell{padding:10px 12px;text-align:center;cursor:default;transition:opacity .15s}
+    .cell:hover{opacity:.85}
+    .cell.winner{outline:2px solid currentColor;outline-offset:-2px;border-radius:4px}
+    .cell-cost{display:block;font-weight:700;font-size:14px;font-variant-numeric:tabular-nums}
+    .cell-cpm,.cell-model{display:block;font-size:10px;color:var(--muted);margin-top:1px}
+    .winner-cell{padding:8px 12px;min-width:110px}
+    .chip-winner{display:inline-block;font-size:11px;font-weight:700;
+                  padding:3px 10px;border-radius:999px}
+
+    /* breakeven */
+    table.be{width:100%;border-collapse:collapse;font-size:13px}
+    table.be th{background:var(--bg);padding:8px 14px;text-align:left;
+                 border-bottom:2px solid var(--border);font-weight:600;white-space:nowrap}
+    table.be td{padding:9px 14px;border-bottom:1px solid var(--border);vertical-align:middle}
+    table.be tr:last-child td{border-bottom:none}
+    table.be tr:hover td{background:#F9FAFB}
+    .num{text-align:right;font-variant-numeric:tabular-nums}
+    .bold{font-weight:700}
+    .muted{color:var(--muted);font-style:italic}
+    .chip{display:inline-block;font-size:11px;font-weight:700;
+           padding:2px 10px;border-radius:999px}
+
+    /* detail table */
+    .data-wrap{overflow-x:auto}
+    table.data{width:100%;border-collapse:collapse;font-size:12px}
+    table.data th{background:var(--bg);padding:7px 10px;text-align:left;
+                   border-bottom:2px solid var(--border);font-weight:600;white-space:nowrap}
+    table.data td{padding:7px 10px;border-bottom:1px solid var(--border)}
+    table.data tr:hover td{background:#F9FAFB}
+
+    /* legend */
+    .legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--muted);
+             margin-top:8px}
+    .legend-dot{width:10px;height:10px;border-radius:2px;display:inline-block}
+
+    /* footer */
+    footer{font-size:11px;color:var(--muted);margin-top:32px;padding-top:14px;
+            border-top:1px solid var(--border)}
+    footer a{text-decoration:underline}
+  </style>
+</head>
+<body>
+<header>
+  <h1>Sovereign LLM Bench — TCO Cloud Souverain Français</h1>
+  <p>
+    4 scénarios grands comptes &nbsp;·&nbsp;
+    4 clouds souverains FR &nbsp;·&nbsp;
+    Tarifs au 2026-05-08 &nbsp;·&nbsp;
+    Taux USD/EUR 0.92 &nbsp;·&nbsp;
+    <code style="opacity:.7">python run.py compare --json | jq .</code>
+  </p>
+</header>
+
+<div class="container">
+
+  <!-- PROVIDER CARDS -->
+  <section>
+    <h2>Providers comparés</h2>
+    <div class="provider-grid">
+      
+        <div class="card provider-card" style="border-top:4px solid #4285F4">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start">
+            <div>
+              <div class="provider-name" style="color:#4285F4">S3NS</div>
+              <div class="provider-sub">Thales × Google Cloud</div>
+            </div>
+            <span class="badge badge-warn">⚠ Proxy</span>
+          </div>
+          <div class="provider-type">API souverain</div>
+          <div class="provider-cert">SecNumCloud 3.2</div>
+          <div class="provider-cpm">€0.105 – €4.370 /M tok</div>
+        </div>
+        <div class="card provider-card" style="border-top:4px solid #00A4EF">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start">
+            <div>
+              <div class="provider-name" style="color:#00A4EF">Bleu</div>
+              <div class="provider-sub">Microsoft × Orange</div>
+            </div>
+            <span class="badge badge-warn">⚠ Proxy</span>
+          </div>
+          <div class="provider-type">API souverain</div>
+          <div class="provider-cert">SecNumCloud (en cours)</div>
+          <div class="provider-cpm">€0.157 – €4.048 /M tok</div>
+        </div>
+        <div class="card provider-card" style="border-top:4px solid #7B2D8B">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start">
+            <div>
+              <div class="provider-name" style="color:#7B2D8B">Scaleway</div>
+              <div class="provider-sub">Generative APIs</div>
+            </div>
+            <span class="badge badge-ok">✓ Officiel</span>
+          </div>
+          <div class="provider-type">API souverain</div>
+          <div class="provider-cert">HDS · ISO 27001</div>
+          <div class="provider-cpm">€0.159 – €0.230 /M tok</div>
+        </div>
+        <div class="card provider-card" style="border-top:4px solid #123F6D">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start">
+            <div>
+              <div class="provider-name" style="color:#123F6D">OVH</div>
+              <div class="provider-sub">Self-hosted GPU</div>
+            </div>
+            <span class="badge badge-info">GPU €/h</span>
+          </div>
+          <div class="provider-type">Infrastructure</div>
+          <div class="provider-cert">HDS · SecNumCloud</div>
+          <div class="provider-cpm">€0.016 – €2.750 /M tok</div>
+        </div>
+    </div>
+    <div class="legend">
+      <span><span class="badge badge-warn">Proxy</span> Prix estimé via plateforme sous-jacente (pas de tarif public LLM)</span>
+      <span><span class="badge badge-ok">Officiel</span> Prix publics sur le site du provider</span>
+      <span><span class="badge badge-info">GPU €/h</span> Coût GPU converti en coût/token via llmfit</span>
+    </div>
+  </section>
+
+  <!-- HEAT-MAP MATRIX -->
+  <section>
+    <h2>Matrice de comparaison — coût mensuel (€)</h2>
+    <div class="card" style="padding:0">
+      <div class="matrix-wrap">
+        <table class="matrix">
+          <thead>
+            <tr>
+              <th>Scénario</th>
+              <th style="color:#4285F4">S3NS<br><small>Thales × Google Cloud</small></th><th style="color:#00A4EF">Bleu<br><small>Microsoft × Orange</small></th><th style="color:#7B2D8B">Scaleway<br><small>Generative APIs</small></th><th style="color:#123F6D">OVH<br><small>Self-hosted GPU</small></th>
+              <th>Plus économique</th>
+            </tr>
+          </thead>
+          <tbody>
+            
+        <tr>
+          <td class="scenario-cell">
+            <strong>S1</strong><br>
+            <span class="scenario-name">RAG léger</span>
+          </td>
+          <td class="cell" style="background:rgb(234,241,255)" data-pid="s3ns" data-sid="S1"><span class="cell-cost">€192</span><span class="cell-cpm">€4.370/M tok</span><span class="cell-model">Gemini 2.5 Pro</span></td><td class="cell" style="background:rgb(229,246,255)" data-pid="bleu" data-sid="S1"><span class="cell-cost">€178</span><span class="cell-cpm">€4.048/M tok</span><span class="cell-model">GPT-4.1</span></td><td class="cell winner" style="background:rgb(245,238,248)" data-pid="scaleway" data-sid="S1"><span class="cell-cost">€10</span><span class="cell-cpm">€0.230/M tok</span><span class="cell-model">Mistral Large 3 (2512)</span></td><td class="cell" style="background:rgb(233,239,244)" data-pid="ovh_selfhosted" data-sid="S1"><span class="cell-cost">€121</span><span class="cell-cpm">€2.750/M tok</span><span class="cell-model">Llama 3 70B (4-bit GPT</span></td>
+          <td class="winner-cell">
+            <span class="chip-winner" style="background:#F5EEF8;color:#7B2D8B">
+              Scaleway
+            </span>
+          </td>
+        </tr>
+        <tr>
+          <td class="scenario-cell">
+            <strong>S2</strong><br>
+            <span class="scenario-name">Chatbot support client</span>
+          </td>
+          <td class="cell" style="background:rgb(203,221,251)" data-pid="s3ns" data-sid="S2"><span class="cell-cost">€1,290</span><span class="cell-cpm">€1.955/M tok</span><span class="cell-model">Gemini 2.5 Pro</span></td><td class="cell" style="background:rgb(204,237,252)" data-pid="bleu" data-sid="S2"><span class="cell-cost">€1,579</span><span class="cell-cpm">€2.392/M tok</span><span class="cell-model">GPT-4.1</span></td><td class="cell winner" style="background:rgb(245,238,248)" data-pid="scaleway" data-sid="S2"><span class="cell-cost">€112</span><span class="cell-cpm">€0.170/M tok</span><span class="cell-model">Mistral Large 3 (2512)</span></td><td class="cell" style="background:rgb(199,209,221)" data-pid="ovh_selfhosted" data-sid="S2"><span class="cell-cost">€484</span><span class="cell-cpm">€0.733/M tok</span><span class="cell-model">Llama 3 70B (4-bit GPT</span></td>
+          <td class="winner-cell">
+            <span class="chip-winner" style="background:#F5EEF8;color:#7B2D8B">
+              Scaleway
+            </span>
+          </td>
+        </tr>
+        <tr>
+          <td class="scenario-cell">
+            <strong>S3</strong><br>
+            <span class="scenario-name">Call center — résumé post-appel</span>
+          </td>
+          <td class="cell" style="background:rgb(235,241,254)" data-pid="s3ns" data-sid="S3"><span class="cell-cost">€405</span><span class="cell-cpm">€0.105/M tok</span><span class="cell-model">Gemini 2.5 Flash-Lite</span></td><td class="cell" style="background:rgb(230,246,254)" data-pid="bleu" data-sid="S3"><span class="cell-cost">€607</span><span class="cell-cpm">€0.157/M tok</span><span class="cell-model">GPT-4o mini</span></td><td class="cell" style="background:rgb(243,236,246)" data-pid="scaleway" data-sid="S3"><span class="cell-cost">€616</span><span class="cell-cpm">€0.159/M tok</span><span class="cell-model">Llama 3.1 70B Instruct</span></td><td class="cell winner" style="background:rgb(232,238,244)" data-pid="ovh_selfhosted" data-sid="S3"><span class="cell-cost">€60</span><span class="cell-cpm">€0.016/M tok</span><span class="cell-model">Llama 3 70B (4-bit GPT</span></td>
+          <td class="winner-cell">
+            <span class="chip-winner" style="background:#E8EEF4;color:#123F6D">
+              OVH
+            </span>
+          </td>
+        </tr>
+        <tr>
+          <td class="scenario-cell">
+            <strong>S4</strong><br>
+            <span class="scenario-name">Call center temps réel (extrême)</span>
+          </td>
+          <td class="cell" style="background:rgb(188,212,251)" data-pid="s3ns" data-sid="S4"><span class="cell-cost">€1,477</span><span class="cell-cpm">€0.120/M tok</span><span class="cell-model">Gemini 2.5 Flash-Lite</span></td><td class="cell" style="background:rgb(165,223,249)" data-pid="bleu" data-sid="S4"><span class="cell-cost">€2,215</span><span class="cell-cpm">€0.179/M tok</span><span class="cell-model">GPT-4o mini</span></td><td class="cell" style="background:rgb(208,181,214)" data-pid="scaleway" data-sid="S4"><span class="cell-cost">€2,100</span><span class="cell-cpm">€0.170/M tok</span><span class="cell-model">Llama 3.1 70B Instruct</span></td><td class="cell winner" style="background:rgb(172,187,203)" data-pid="ovh_selfhosted" data-sid="S4"><span class="cell-cost">€605</span><span class="cell-cpm">€0.049/M tok</span><span class="cell-model">Llama 3 70B (4-bit GPT</span></td>
+          <td class="winner-cell">
+            <span class="chip-winner" style="background:#E8EEF4;color:#123F6D">
+              OVH
+            </span>
+          </td>
+        </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div style="font-size:11px;color:var(--muted);margin-top:8px">
+      Intensité de couleur = position dans la fourchette min–max de chaque provider.
+      Encadré = moins cher sur ce scénario.
+    </div>
+  </section>
+
+  <!-- BREAKEVEN -->
+  <section>
+    <h2>Seuils de rentabilité — OVH self-hosted vs API</h2>
+    <div class="card" style="padding:0">
+      <table class="be">
+        <thead>
+          <tr>
+            <th>Scénario</th>
+            <th>vs Provider API</th>
+            <th class="num">OVH / mois</th>
+            <th class="num">API / mois</th>
+            <th class="num">Écart</th>
+            <th class="num">Breakeven*</th>
+            <th>Verdict</th>
+          </tr>
+        </thead>
+        <tbody>
+            <tr>
+              <td><strong>S1</strong></td>
+              <td><span style="color:#4285F4;font-weight:600">S3NS</span></td>
+              <td class="num">€121</td>
+              <td class="num">€192</td>
+              <td class="num">€71/mois</td>
+              <td class="num">244 mois</td>
+              <td><span class="chip" style="background:#E8EEF4;color:#123F6D">OVH self-hosted</span></td>
+            </tr>
+            <tr>
+              <td><strong>S1</strong></td>
+              <td><span style="color:#00A4EF;font-weight:600">Bleu</span></td>
+              <td class="num">€121</td>
+              <td class="num">€178</td>
+              <td class="num">€57/mois</td>
+              <td class="num">305 mois</td>
+              <td><span class="chip" style="background:#E8EEF4;color:#123F6D">OVH self-hosted</span></td>
+            </tr>
+            <tr>
+              <td><strong>S1</strong></td>
+              <td><span style="color:#7B2D8B;font-weight:600">Scaleway</span></td>
+              <td class="num">€121</td>
+              <td class="num">€10</td>
+              <td class="num">€111/mois</td>
+              <td class="num"><span class="muted">jamais</span></td>
+              <td><span class="chip" style="background:#F5EEF8;color:#7B2D8B">Scaleway</span></td>
+            </tr>
+            <tr>
+              <td><strong>S2</strong></td>
+              <td><span style="color:#4285F4;font-weight:600">S3NS</span></td>
+              <td class="num">€484</td>
+              <td class="num">€1,290</td>
+              <td class="num">€806/mois</td>
+              <td class="num">22 mois</td>
+              <td><span class="chip" style="background:#E8EEF4;color:#123F6D">OVH self-hosted</span></td>
+            </tr>
+            <tr>
+              <td><strong>S2</strong></td>
+              <td><span style="color:#00A4EF;font-weight:600">Bleu</span></td>
+              <td class="num">€484</td>
+              <td class="num">€1,579</td>
+              <td class="num">€1,095/mois</td>
+              <td class="num">16 mois</td>
+              <td><span class="chip" style="background:#E8EEF4;color:#123F6D">OVH self-hosted</span></td>
+            </tr>
+            <tr>
+              <td><strong>S2</strong></td>
+              <td><span style="color:#7B2D8B;font-weight:600">Scaleway</span></td>
+              <td class="num">€484</td>
+              <td class="num">€112</td>
+              <td class="num">€372/mois</td>
+              <td class="num"><span class="muted">jamais</span></td>
+              <td><span class="chip" style="background:#F5EEF8;color:#7B2D8B">Scaleway</span></td>
+            </tr>
+            <tr>
+              <td><strong>S3</strong></td>
+              <td><span style="color:#4285F4;font-weight:600">S3NS</span></td>
+              <td class="num">€60</td>
+              <td class="num">€405</td>
+              <td class="num">€345/mois</td>
+              <td class="num">51 mois</td>
+              <td><span class="chip" style="background:#E8EEF4;color:#123F6D">OVH self-hosted</span></td>
+            </tr>
+            <tr>
+              <td><strong>S3</strong></td>
+              <td><span style="color:#00A4EF;font-weight:600">Bleu</span></td>
+              <td class="num">€60</td>
+              <td class="num">€607</td>
+              <td class="num">€547/mois</td>
+              <td class="num">32 mois</td>
+              <td><span class="chip" style="background:#E8EEF4;color:#123F6D">OVH self-hosted</span></td>
+            </tr>
+            <tr>
+              <td><strong>S3</strong></td>
+              <td><span style="color:#7B2D8B;font-weight:600">Scaleway</span></td>
+              <td class="num">€60</td>
+              <td class="num">€616</td>
+              <td class="num">€556/mois</td>
+              <td class="num">31 mois</td>
+              <td><span class="chip" style="background:#E8EEF4;color:#123F6D">OVH self-hosted</span></td>
+            </tr>
+            <tr>
+              <td><strong>S4</strong></td>
+              <td><span style="color:#4285F4;font-weight:600">S3NS</span></td>
+              <td class="num">€605</td>
+              <td class="num">€1,477</td>
+              <td class="num">€872/mois</td>
+              <td class="num">20 mois</td>
+              <td><span class="chip" style="background:#E8EEF4;color:#123F6D">OVH self-hosted</span></td>
+            </tr>
+            <tr>
+              <td><strong>S4</strong></td>
+              <td><span style="color:#00A4EF;font-weight:600">Bleu</span></td>
+              <td class="num">€605</td>
+              <td class="num">€2,215</td>
+              <td class="num">€1,610/mois</td>
+              <td class="num">11 mois</td>
+              <td><span class="chip" style="background:#E8EEF4;color:#123F6D">OVH self-hosted</span></td>
+            </tr>
+            <tr>
+              <td><strong>S4</strong></td>
+              <td><span style="color:#7B2D8B;font-weight:600">Scaleway</span></td>
+              <td class="num">€605</td>
+              <td class="num">€2,100</td>
+              <td class="num">€1,495/mois</td>
+              <td class="num">12 mois</td>
+              <td><span class="chip" style="background:#E8EEF4;color:#123F6D">OVH self-hosted</span></td>
+            </tr></tbody>
+      </table>
+    </div>
+    <p style="font-size:11px;color:var(--muted);margin-top:8px">
+      * Breakeven = mois nécessaires pour amortir 12 mois de GPU (proxy capex) grâce à l'économie mensuelle.
+    </p>
+  </section>
+
+  <!-- FULL DATA TABLE -->
+  <section>
+    <h2>Données complètes</h2>
+    <div class="card data-wrap" style="padding:0">
+      <table class="data">
+        <thead>
+          <tr>
+            <th>Scénario</th><th>Provider</th><th>Modèle</th>
+            <th class="num">Tokens/jour</th>
+            <th class="num">€/jour</th>
+            <th class="num bold">€/mois</th>
+            <th class="num">€/an</th>
+            <th class="num">€/M tok</th>
+          </tr>
+        </thead>
+        <tbody>
+            <tr>
+              <td><strong>S1</strong> — RAG léger</td>
+              <td style="color:#4285F4;font-weight:600">S3NS <span class="badge badge-warn">Proxy</span></td>
+              <td>Gemini 2.5 Pro</td>
+              <td class="num">2,000,000</td>
+              <td class="num">€8.74</td>
+              <td class="num bold">€192</td>
+              <td class="num">€2,307</td>
+              <td class="num">€4.3700</td>
+            </tr>
+            <tr>
+              <td><strong>S1</strong> — RAG léger</td>
+              <td style="color:#00A4EF;font-weight:600">Bleu <span class="badge badge-warn">Proxy</span></td>
+              <td>GPT-4.1</td>
+              <td class="num">2,000,000</td>
+              <td class="num">€8.10</td>
+              <td class="num bold">€178</td>
+              <td class="num">€2,137</td>
+              <td class="num">€4.0480</td>
+            </tr>
+            <tr>
+              <td><strong>S1</strong> — RAG léger</td>
+              <td style="color:#7B2D8B;font-weight:600">Scaleway <span class="badge badge-ok">Officiel</span></td>
+              <td>Mistral Large 3 (2512)</td>
+              <td class="num">2,000,000</td>
+              <td class="num">€0.46</td>
+              <td class="num bold">€10</td>
+              <td class="num">€121</td>
+              <td class="num">€0.2300</td>
+            </tr>
+            <tr>
+              <td><strong>S1</strong> — RAG léger</td>
+              <td style="color:#123F6D;font-weight:600">OVH <span class="badge badge-ok">Officiel</span></td>
+              <td>Llama 3 70B (4-bit GPTQ)</td>
+              <td class="num">2,000,000</td>
+              <td class="num">€5.50</td>
+              <td class="num bold">€121</td>
+              <td class="num">€1,452</td>
+              <td class="num">€2.7500</td>
+            </tr>
+            <tr>
+              <td><strong>S2</strong> — Chatbot support client</td>
+              <td style="color:#4285F4;font-weight:600">S3NS <span class="badge badge-warn">Proxy</span></td>
+              <td>Gemini 2.5 Pro</td>
+              <td class="num">30,000,000</td>
+              <td class="num">€58.65</td>
+              <td class="num bold">€1,290</td>
+              <td class="num">€15,484</td>
+              <td class="num">€1.9550</td>
+            </tr>
+            <tr>
+              <td><strong>S2</strong> — Chatbot support client</td>
+              <td style="color:#00A4EF;font-weight:600">Bleu <span class="badge badge-warn">Proxy</span></td>
+              <td>GPT-4.1</td>
+              <td class="num">30,000,000</td>
+              <td class="num">€71.76</td>
+              <td class="num bold">€1,579</td>
+              <td class="num">€18,945</td>
+              <td class="num">€2.3920</td>
+            </tr>
+            <tr>
+              <td><strong>S2</strong> — Chatbot support client</td>
+              <td style="color:#7B2D8B;font-weight:600">Scaleway <span class="badge badge-ok">Officiel</span></td>
+              <td>Mistral Large 3 (2512)</td>
+              <td class="num">30,000,000</td>
+              <td class="num">€5.10</td>
+              <td class="num bold">€112</td>
+              <td class="num">€1,346</td>
+              <td class="num">€0.1700</td>
+            </tr>
+            <tr>
+              <td><strong>S2</strong> — Chatbot support client</td>
+              <td style="color:#123F6D;font-weight:600">OVH <span class="badge badge-ok">Officiel</span></td>
+              <td>Llama 3 70B (4-bit GPTQ)</td>
+              <td class="num">30,000,000</td>
+              <td class="num">€22.00</td>
+              <td class="num bold">€484</td>
+              <td class="num">€5,808</td>
+              <td class="num">€0.7333</td>
+            </tr>
+            <tr>
+              <td><strong>S3</strong> — Call center — résumé post-appel</td>
+              <td style="color:#4285F4;font-weight:600">S3NS <span class="badge badge-warn">Proxy</span></td>
+              <td>Gemini 2.5 Flash-Lite</td>
+              <td class="num">176,000,000</td>
+              <td class="num">€18.40</td>
+              <td class="num bold">€405</td>
+              <td class="num">€4,858</td>
+              <td class="num">€0.1045</td>
+            </tr>
+            <tr>
+              <td><strong>S3</strong> — Call center — résumé post-appel</td>
+              <td style="color:#00A4EF;font-weight:600">Bleu <span class="badge badge-warn">Proxy</span></td>
+              <td>GPT-4o mini</td>
+              <td class="num">176,000,000</td>
+              <td class="num">€27.60</td>
+              <td class="num bold">€607</td>
+              <td class="num">€7,286</td>
+              <td class="num">€0.1568</td>
+            </tr>
+            <tr>
+              <td><strong>S3</strong> — Call center — résumé post-appel</td>
+              <td style="color:#7B2D8B;font-weight:600">Scaleway <span class="badge badge-ok">Officiel</span></td>
+              <td>Llama 3.1 70B Instruct</td>
+              <td class="num">176,000,000</td>
+              <td class="num">€28.00</td>
+              <td class="num bold">€616</td>
+              <td class="num">€7,392</td>
+              <td class="num">€0.1591</td>
+            </tr>
+            <tr>
+              <td><strong>S3</strong> — Call center — résumé post-appel</td>
+              <td style="color:#123F6D;font-weight:600">OVH <span class="badge badge-ok">Officiel</span></td>
+              <td>Llama 3 70B (4-bit GPTQ)</td>
+              <td class="num">176,000,000</td>
+              <td class="num">€2.74</td>
+              <td class="num bold">€60</td>
+              <td class="num">€723</td>
+              <td class="num">€0.0156</td>
+            </tr>
+            <tr>
+              <td><strong>S4</strong> — Call center temps réel (extrême)</td>
+              <td style="color:#4285F4;font-weight:600">S3NS <span class="badge badge-warn">Proxy</span></td>
+              <td>Gemini 2.5 Flash-Lite</td>
+              <td class="num">561,600,000</td>
+              <td class="num">€67.12</td>
+              <td class="num bold">€1,477</td>
+              <td class="num">€17,721</td>
+              <td class="num">€0.1195</td>
+            </tr>
+            <tr>
+              <td><strong>S4</strong> — Call center temps réel (extrême)</td>
+              <td style="color:#00A4EF;font-weight:600">Bleu <span class="badge badge-warn">Proxy</span></td>
+              <td>GPT-4o mini</td>
+              <td class="num">561,600,000</td>
+              <td class="num">€100.68</td>
+              <td class="num bold">€2,215</td>
+              <td class="num">€26,581</td>
+              <td class="num">€0.1793</td>
+            </tr>
+            <tr>
+              <td><strong>S4</strong> — Call center temps réel (extrême)</td>
+              <td style="color:#7B2D8B;font-weight:600">Scaleway <span class="badge badge-ok">Officiel</span></td>
+              <td>Llama 3.1 70B Instruct</td>
+              <td class="num">561,600,000</td>
+              <td class="num">€95.44</td>
+              <td class="num bold">€2,100</td>
+              <td class="num">€25,196</td>
+              <td class="num">€0.1699</td>
+            </tr>
+            <tr>
+              <td><strong>S4</strong> — Call center temps réel (extrême)</td>
+              <td style="color:#123F6D;font-weight:600">OVH <span class="badge badge-ok">Officiel</span></td>
+              <td>Llama 3 70B (4-bit GPTQ)</td>
+              <td class="num">561,600,000</td>
+              <td class="num">€27.50</td>
+              <td class="num bold">€605</td>
+              <td class="num">€7,260</td>
+              <td class="num">€0.0490</td>
+            </tr></tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer>
+    <p><strong>Sources de tarifs</strong> (prix list publics au 2026-05-08, sans remise volume)</p>
+    <p>
+      S3NS proxy →
+      <a href="https://cloud.google.com/vertex-ai/generative-ai/pricing">cloud.google.com/vertex-ai/generative-ai/pricing</a>
+      &nbsp;·&nbsp;
+      Bleu proxy →
+      <a href="https://azure.microsoft.com/en-us/pricing/details/ai-foundry-models/aoai/">azure.microsoft.com pricing/ai-foundry-models/aoai</a>
+      &nbsp;·&nbsp;
+      Scaleway →
+      <a href="https://www.scaleway.com/en/pricing/model-as-a-service/">scaleway.com/pricing/model-as-a-service</a>
+      &nbsp;·&nbsp;
+      OVH GPU →
+      <a href="https://www.ovhcloud.com/en/public-cloud/prices/">ovhcloud.com/public-cloud/prices</a>
+    </p>
+    <p>
+      Throughput OVH : formule <a href="https://github.com/AlexsJones/llmfit">llmfit</a>
+      — tps = (bandwidth_gbps / model_size_gb) × 0.55
+      &nbsp;·&nbsp;
+      ⚠ S3NS / Bleu : tarifs proxy — contacter les providers pour les tarifs contractuels souverains réels
+    </p>
+    <p>
+      CLI : <code>python run.py --help</code> ·
+      JSON : <code>python run.py compare --json</code> ·
+      Repo : <a href="https://github.com/desmartinguillaume-a11y/sovereign-llm-bench">sovereign-llm-bench</a>
+      · Apache 2.0
+    </p>
+  </footer>
+
+</div>
+
+</body>
+</html>
